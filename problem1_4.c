@@ -10,9 +10,6 @@ void tryToEnterStage(char, int);
 void leaveStage(char, int, int);
 
 struct timespec remaining, request = {5, 100};
-typedef struct {
-    int id;
-} thread_arg;
 
 
 sem_t mutex;
@@ -21,8 +18,8 @@ sem_t sem_running;
 sem_t sem_crossover;
 sem_t sem_dress;
 
-int stage[6];
-int stageQueue[6];
+pthread_t stage[6];
+pthread_t stageQueue[6];
 
 // 18 running shoes
 // 16 dress shoes
@@ -200,7 +197,7 @@ void enterStage(char c, int id)
     int index;
     for (int i = 0; i < 6; i++)
     {
-        if (stage[i] == -1)
+        if (stage[i] == NULL)
         {
             stage[i] = id;
             index = i;
@@ -229,7 +226,7 @@ void leaveStage(char c, int i, int id)
 
     sem_wait(&mutex);
     // remove from stage
-    stage[i] = -1;
+    stage[i] = NULL;
 
     switch (c)
     {
@@ -304,7 +301,6 @@ int main(int argc, char *argv[])
     // running shoes
     for (int i = 0; i < 18; i++)
     {
-        // thread_arg *args = {i};
         int result = pthread_create(&thread_id_r[i], NULL, runningShoes, i);
     }
 
