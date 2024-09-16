@@ -3,8 +3,14 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
-void enterStage(char c, int id);
+void enterStage(char, int );
+void tryToEnterStage(char, int);
+void leaveStage(char, int, int);
+
+struct timespec remaining, request = {5, 100};
+
 
 sem_t mutex;
 sem_t sem_stage;
@@ -36,9 +42,10 @@ void *runningShoes(int *arg)
     {
         printf("Running shoes #%d is running\n", arg);
 
-        usleep(100000);
+        // usleep(100000);
+        // nanosleep(&request, &remaining);
 
-        printf("Running: slept\n", arg);
+        printf("Running: %d slept\n", arg);
 
         tryToEnterStage('r', arg);
 
@@ -56,7 +63,8 @@ void *dressShoes(int *arg)
     {
         printf("Dress shoes #%d are running\n", arg);
 
-        usleep(100000);
+        // usleep(100000);
+        // nanosleep(&request, &remaining);
 
         tryToEnterStage('d', arg);
 
@@ -73,7 +81,8 @@ void *crossoverShoes(int *arg)
     {
         printf("Crossover shoes #%d are running\n", arg);
 
-        usleep(100000);
+        // usleep(100000);
+        // nanosleep(&request, &remaining);
 
         tryToEnterStage('c', arg);
 
@@ -87,9 +96,9 @@ void tryToEnterStage(char c, int id)
     // sem indicates how many spots available
     // sem_wait(&sem_stage);
 
-    printf("Waiting on lock to try for stage.\n");
+    printf("%c%d: Waiting on lock to try for stage.\n", c, id);
     sem_wait(&mutex);
-    printf("Gained lock\n");
+    printf("%c%d: Gained lock\n", c, id);
 
     int stage = 0;
     sem_getvalue(&sem_stage, &stage);
@@ -100,11 +109,11 @@ void tryToEnterStage(char c, int id)
 
     if (c == 'r')
     {
-        printf("Running: Waiting on lock.\n");
+        printf("#%dRunning: Waiting on lock.\n", id);
         // goes on stage
         sem_wait(&sem_running);
 
-        printf("Running: Waiting on stage.\n");
+        printf("#%dRunning: Waiting on stage.\n", id);
         // sem indicates how many spots available
         sem_wait(&sem_stage);
 
@@ -113,7 +122,7 @@ void tryToEnterStage(char c, int id)
         if (spaceLeft == 5)
         {
             // lock other two
-            printf("Running: Locking stage.\n");
+            printf("#%dRunning: Locking stage.\n", id);
             sem_wait(&sem_crossover);
             sem_wait(&sem_dress);
         }
@@ -121,25 +130,25 @@ void tryToEnterStage(char c, int id)
         sem_post(&sem_running);
         sem_post(&mutex);
 
-        printf("Running: Entering stage.\n");
+        printf("#%dRunning: Entering stage.\n", id);
         enterStage(c, id);
     }
     else if (c == 'd')
     {
-        printf("Dress shoes: Waiting on lock.\n");
+        printf("#%dDress shoes: Waiting on lock.\n", id);
         // goes on stage
         sem_wait(&sem_dress);
 
-        printf("Dress shoes: Waiting on stage.\n");
+        printf("#%dDress Shoes: Waiting on stage.\n", id);
         // sem indicates how many spots available
         sem_wait(&sem_stage);
 
         int spaceLeft = 0;
         sem_getvalue(&sem_dress, &spaceLeft);
-        if (spaceLeft == 5)
+        if (spaceLeft > 0)
         {
             // lock other two
-            printf("Dress shoes: Locking stage.\n");
+            printf("#%dDress Shoes: Locking stage.\n", id);
             sem_wait(&sem_crossover);
             sem_wait(&sem_running);
         }
@@ -147,16 +156,16 @@ void tryToEnterStage(char c, int id)
         sem_post(&sem_dress);
         sem_post(&mutex);
 
-        printf("Dress shoes: Entering stage.\n");
+        printf("#%dDress Shoes: Entering stage.\n", id);
         enterStage(c, id);
     }
     else if (c == 'c')
     {
-        printf("Running: Waiting on lock.\n");
+        printf("#%dCross Shoes: Waiting on lock.\n", id);
         // goes on stage
         sem_wait(&sem_crossover);
 
-        printf("Running: Waiting on stage.\n");
+        printf("#%dCross Shoes: Waiting on stage.\n", id);
         // sem indicates how many spots available
         sem_wait(&sem_stage);
 
@@ -173,7 +182,7 @@ void tryToEnterStage(char c, int id)
         sem_post(&sem_crossover);
         sem_post(&mutex);
 
-        printf("Running: Entering stage.\n");
+        printf("#%dCross Shoes: Entering stage.\n");
         enterStage(c, id);
         sem_post(&mutex);
     }
@@ -190,8 +199,10 @@ void enterStage(char c, int id)
     {
         if (stage[i] == NULL)
         {
+            printf("HELLO THERE\n");
             stage[i] = id;
             index = i;
+            printf("I, #%d%c  am on shoebox #%d!\n", id, c, index);
             // index = pthread_self - should be i
             break;
         }
@@ -200,17 +211,19 @@ void enterStage(char c, int id)
     // if has more than two shoes, send up as many as you can
     //leave
 
-    printf("I, %c %d am on shoebox #%d!\n", c, id, index);
+    printf("bout to unlock\n");
 
     sem_post(&mutex);
+
+    printf("unlocked\n");
 
     // sleep
     //usleep(100000);
 
-    leaveStage(c, index);
+    leaveStage(c, index, id);
 }
 
-void leaveStage(char c, int i)
+void leaveStage(char c, int i, int id)
 {
 
     sem_wait(&mutex);
@@ -221,19 +234,19 @@ void leaveStage(char c, int i)
     {
 
     case 'r':
-        printf("Running: Unlocking stage.\n");
+        printf("%dRunning: Unlocking stage.\n", id);
         sem_post(&sem_dress);
         sem_post(&sem_crossover);
         break;
 
     case 'd':
-        ("Dress: Unlocking stage.\n");
+        ("%dDress: Unlocking stage.\n", id);
         sem_post(&sem_running);
         sem_post(&sem_crossover);
         break;
 
     case 'c':
-        ("Crossover: Unlocking stage.\n");
+        ("%dCrossover: Unlocking stage.\n", id);
         sem_post(&sem_dress);
         sem_post(&sem_running);
         break;
@@ -242,14 +255,15 @@ void leaveStage(char c, int i)
         break;
     }
 
-    printf("A %c is leaving!\n", c);
+    printf("#%d%c is leaving!\n", id, c);
 
     sem_post(&sem_stage);
 
     sem_post(&mutex);
 
     // sleep
-    usleep(100000);
+    // usleep(1000000);
+    nanosleep(1, 0);
 
     // try again
 }
