@@ -119,7 +119,7 @@ void tryToEnterStage(char c, int id)
 
         int spaceLeft = 0;
         sem_getvalue(&sem_running, &spaceLeft);
-        if (spaceLeft == 5)
+        if (spaceLeft > 0)
         {
             // lock other two
             printf("#%dRunning: Locking stage.\n", id);
