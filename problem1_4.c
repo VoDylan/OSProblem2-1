@@ -10,6 +10,9 @@ void tryToEnterStage(char, int);
 void leaveStage(char, int, int);
 
 struct timespec remaining, request = {5, 100};
+typedef struct {
+    int id;
+} thread_arg;
 
 
 sem_t mutex;
@@ -18,8 +21,8 @@ sem_t sem_running;
 sem_t sem_crossover;
 sem_t sem_dress;
 
-pthread_t stage[6];
-pthread_t stageQueue[6];
+int stage[6];
+int stageQueue[6];
 
 // 18 running shoes
 // 16 dress shoes
@@ -42,15 +45,15 @@ void *runningShoes(int *arg)
     {
         printf("Running shoes #%d is running\n", arg);
 
-        // usleep(100000);
-        // nanosleep(&request, &remaining);
 
+        usleep(500000);
+        // nanosleep(&request, &remaining);
         printf("Running: %d slept\n", arg);
+        
 
         tryToEnterStage('r', arg);
 
         printf("Running shoes #%d have left\n", arg);
-
 
     }
     return NULL;
@@ -63,7 +66,7 @@ void *dressShoes(int *arg)
     {
         printf("Dress shoes #%d are running\n", arg);
 
-        // usleep(100000);
+        usleep(500000);
         // nanosleep(&request, &remaining);
 
         tryToEnterStage('d', arg);
@@ -81,7 +84,7 @@ void *crossoverShoes(int *arg)
     {
         printf("Crossover shoes #%d are running\n", arg);
 
-        // usleep(100000);
+        usleep(500000);
         // nanosleep(&request, &remaining);
 
         tryToEnterStage('c', arg);
@@ -119,7 +122,7 @@ void tryToEnterStage(char c, int id)
 
         int spaceLeft = 0;
         sem_getvalue(&sem_running, &spaceLeft);
-        if (spaceLeft > 0)
+        if (spaceLeft > 5)
         {
             // lock other two
             printf("#%dRunning: Locking stage.\n", id);
@@ -197,9 +200,8 @@ void enterStage(char c, int id)
     int index;
     for (int i = 0; i < 6; i++)
     {
-        if (stage[i] == NULL)
+        if (stage[i] == -1)
         {
-            printf("HELLO THERE\n");
             stage[i] = id;
             index = i;
             printf("I, #%d%c  am on shoebox #%d!\n", id, c, index);
@@ -211,14 +213,13 @@ void enterStage(char c, int id)
     // if has more than two shoes, send up as many as you can
     //leave
 
-    printf("bout to unlock\n");
 
     sem_post(&mutex);
 
-    printf("unlocked\n");
 
     // sleep
-    //usleep(100000);
+    usleep(500000);
+    // nanosleep(5, 100);
 
     leaveStage(c, index, id);
 }
@@ -228,7 +229,7 @@ void leaveStage(char c, int i, int id)
 
     sem_wait(&mutex);
     // remove from stage
-    stage[i] = NULL;
+    stage[i] = -1;
 
     switch (c)
     {
@@ -262,8 +263,8 @@ void leaveStage(char c, int i, int id)
     sem_post(&mutex);
 
     // sleep
-    // usleep(1000000);
-    nanosleep(1, 0);
+    usleep(500000);
+    // nanosleep(1, 0);
 
     // try again
 }
@@ -303,23 +304,25 @@ int main(int argc, char *argv[])
     // running shoes
     for (int i = 0; i < 18; i++)
     {
-
+        // thread_arg *args = {i};
         int result = pthread_create(&thread_id_r[i], NULL, runningShoes, i);
     }
 
     pthread_t thread_id_d[16];
     // dress shoes
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 16; i++ )
     {
-
-        int result = pthread_create(&thread_id_d[i] + 18, NULL, dressShoes, i);
+        int result = pthread_create(&thread_id_d[i], NULL, dressShoes, i);
     }
 
     pthread_t thread_id_c[15];
     // crossover shoes
     for (int i = 0; i < 15; i++)
     {
+        int result = pthread_create(&thread_id_c[i], NULL, crossoverShoes, i);
+    }
 
-        int result = pthread_create(&thread_id_c[i] + 34, NULL, crossoverShoes, i);
+    while(1){
+        // usleep(100000);
     }
 }
