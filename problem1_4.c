@@ -107,7 +107,7 @@ void tryToEnterStage(char c, int id)
        printf("I, %c%d, was forced to give up lock.\n", c, id); 
     }
 
-    if (c == 'r')
+    else if (c == 'r')
     {
         printf("#%dRunning: Waiting on lock.\n", id);
         // goes on stage
@@ -119,7 +119,7 @@ void tryToEnterStage(char c, int id)
 
         int spaceLeft = 0;
         sem_getvalue(&sem_running, &spaceLeft);
-        if (spaceLeft > 5)
+        if (spaceLeft > 0)
         {
             // lock other two
             printf("#%dRunning: Locking stage.\n", id);
@@ -171,7 +171,7 @@ void tryToEnterStage(char c, int id)
 
         int spaceLeft = 0;
         sem_getvalue(&sem_crossover, &spaceLeft);
-        if (spaceLeft == 5)
+        if (spaceLeft > 0)
         {
             // lock other two
             printf("Running: Locking stage.\n");
