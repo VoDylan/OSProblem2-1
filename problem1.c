@@ -8,7 +8,7 @@
 #define MAXSLEEP 500000
 
 int stage[6] = {-1, -1, -1, -1, -1, -1};
-int stageQueue[18] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
 // pthread_t runningQueue[18];
 // pthread_t dressQueue[16];
 // pthread_t crossQueue[15];

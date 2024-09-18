@@ -1,0 +1,4 @@
+In problem 1, the issue of fairness and starvation is solved by putting a maximum counter of threads on a single type
+    that can enter the stage during a given time.
+Once the stage has been claimed by a type, it will refuse all other shoe types until rotate_stage() is called and
+    switches the type randomly between the other two types. 
