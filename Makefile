@@ -1,2 +1,2 @@
-problem1_4: problem1_4.c
-	gcc -g problem1_4.c -o problem1_4 -I.
+problem1: problem1.c
+	gcc -g problem1.c -o problem1 -I.
