@@ -9,22 +9,12 @@
 
 int stage[6] = {-1, -1, -1, -1, -1, -1};
 
-// pthread_t runningQueue[18];
-// pthread_t dressQueue[16];
-// pthread_t crossQueue[15];
-
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_enter = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cond_wake = PTHREAD_COND_INITIALIZER;
 int allowedThreads = 0;
 int stageType;
 int numSleepingForStage = 0;
-
-// pthread_signal_t cond;
-
-// 18 running shoes
-// 16 dress shoes
-// 15 crossover shoes
 
 void enter_stage(int, int);
 void try_to_enter(int, int);
@@ -33,97 +23,93 @@ void rotate_stage();
 
 void *runningShoes(void *arg)
 {
-    // int thread_id = *((int *)arg);
     int id = *((int *)arg);
     free(arg);
 
     while (1)
     {
         printf("Running shoes #%d is running\n", id);
-    pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&lock);
         try_to_enter(id, 0);
 
         int rand_sleep = MINSLEEP + rand() % (MAXSLEEP - MINSLEEP + 1);
-        printf("Sleeping Running Shoes #%d for %d microseconds\n", id, rand_sleep);
+        printf("Running Shoes #%d Sleeping on stage for %d microseconds\n", id, rand_sleep);
         usleep(rand_sleep);
 
         leaveStage(id, 0);
 
         rand_sleep = MINSLEEP + rand() % (MAXSLEEP - MINSLEEP + 1);
-        printf("Sleeping Running Shoes #%d for %d microseconds\n", id, rand_sleep);
+        printf("Running Shoes #%d Sleeping leaving stage for %d microseconds\n", id, rand_sleep);
         usleep(rand_sleep);
-
-        // printf("Running shoes #%d have left\n", arg);
     }
     return NULL;
 }
 
 void *dressShoes(void *arg)
 {
-    // int thread_id = *((int *)arg);
     int id = *((int *)arg);
     free(arg);
 
     while (1)
     {
-        // myarg_t *args = (myarg_t *) arg;
         printf("Dress shoes #%d are running\n", id);
-    pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&lock);
         try_to_enter(id, 1);
 
         int rand_sleep = MINSLEEP + rand() % (MAXSLEEP - MINSLEEP + 1);
-        printf("Sleeping Dress Shoes #%d for %d microseconds\n", id, rand_sleep);
+        printf("Dress Shoes #%d Sleeping on stage for %d microseconds\n", id, rand_sleep);
         usleep(rand_sleep);
 
         leaveStage(id, 1);
 
         rand_sleep = MINSLEEP + rand() % (MAXSLEEP - MINSLEEP + 1);
-        printf("Sleeping Running Shoes #%d for %d microseconds\n", id, rand_sleep);
+        printf("Dress Shoes #%d Sleeping leaving stage for %d microseconds\n", id, rand_sleep);
         usleep(rand_sleep);
-
-        // printf("Dress shoes #%d have left\n", arg);
     }
     return NULL;
 }
 
 void *crossoverShoes(void *arg)
 {
-    // int thread_id = *((int *)arg);
     int id = *((int *)arg);
     free(arg);
 
     while (1)
     {
-        // myarg_t *args = (myarg_t *) arg;
         printf("Crossover shoes #%d are running\n", id);
-    pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&lock);
         try_to_enter(id, 2);
 
         int rand_sleep = MINSLEEP + rand() % (MAXSLEEP - MINSLEEP + 1);
-        printf("Sleeping Crossover Shoes #%d for %d microseconds\n", id, rand_sleep);
+        printf("Crossover Shoes #%d Sleeping on stage for %d microseconds\n", id, rand_sleep);
         usleep(rand_sleep);
 
         leaveStage(id, 2);
 
         rand_sleep = MINSLEEP + rand() % (MAXSLEEP - MINSLEEP + 1);
-        printf("Sleeping Running Shoes #%d for %d microseconds\n", id, rand_sleep);
+        printf("Crossover Shoes #%d Sleeping leaving stage for %d microseconds\n", id, rand_sleep);
         usleep(rand_sleep);
-
-        // printf("Crossover shoes #%d have left.\n", id);
     }
     return NULL;
 }
 
 void try_to_enter(int id, int type)
-{   
-    // printf("was i here? %d, %d\n", id, type);
-
-    //  printf("i was!%d, %d\n", id, type);
-    // check type on stage vs entered type
+{
+    switch (type)
+    {
+    case 0:
+        printf("Running Shoe %d is trying to enter the stage\n", id);
+        break;
+    case 1:
+        printf("Dress Shoe %d is trying to enter the stage\n", id);
+        break;
+    case 2:
+        printf("Crossover Shoe %d is trying to enter the stage\n", id);
+        break;
+    }
     if (type == stageType && allowedThreads < MAXCOUNT)
     {
-        printf("Shoe %d, Type %d is trying to enter the stage\n", id, type);
-        // int numWaiting = 0; // check how many are waiting to go on stage
+
         int onStage = 0;
         for (int i = 0; i < 6; i++)
         {
@@ -138,18 +124,54 @@ void try_to_enter(int id, int type)
         if (numSleepingForStage > 1 && onStage < 5 && allowedThreads < MAXCOUNT) // add to stage if possible
         {
             numSleepingForStage++;
+            switch (type)
+            {
+            case 0:
+                printf("Running Shoe %d is entering stage and signaling another Running Shoe!\n", id);
+                break;
+            case 1:
+                printf("Dress Shoe %d is entering stage and signaling another Dress Shoe!\n", id);
+                break;
+            case 2:
+                printf("Crossover Shoe %d is entering stage and signaling another Cross Shoe!\n", id);
+                break;
+            }
             pthread_cond_signal(&cond_enter);
             enter_stage(id, type);
         }
         else // sleep until woken
         {
             numSleepingForStage++;
-            printf("Shoe %d, Type %d will sleep now, until ready to enter stage\n", id, type);
+            switch (type)
+            {
+            case 0:
+                printf("Running Shoe %d is sleeping until signaled to enter stage\n", id);
+                break;
+            case 1:
+                printf("Dress Shoe %d is sleeping until signaled to enter stage\n", id);
+                break;
+            case 2:
+                printf("Crossover Shoe %d is sleeping until signaled to enter stage\n", id);
+                break;
+            }
+            // printf("Shoe %d, Type %d will sleep now, until ready to enter stage\n", id, type);
             pthread_mutex_unlock(&lock);
             pthread_cond_wait(&cond_enter, &lock);
             if (type == stageType)
             {
-                printf("Shoe %d, Type %d, Waking up to try and enter stage!\n", id, type);
+                switch (type)
+                {
+                case 0:
+                    printf("Running Shoe %d is waking up to try and enter stage!\n", id);
+                    break;
+                case 1:
+                    printf("Dress Shoe %d is waking up to try and enter stage!\n", id);
+                    break;
+                case 2:
+                    printf("Crossover Shoe %d is waking up to try and enter stage!\n", id);
+                    break;
+                }
+                // printf("Shoe %d, Type %d, Waking up to try and enter stage!\n", id, type);
                 enter_stage(id, type);
             }
             pthread_mutex_unlock(&lock);
@@ -157,7 +179,6 @@ void try_to_enter(int id, int type)
     }
     else if (allowedThreads >= MAXCOUNT && type == stageType)
     {
-        // printf("Attempting to rotate stage as allowedThreads reached %d\n", allowedThreads);
         int onStage = 0;
         for (int i = 0; i < 6; i++)
         {
@@ -169,13 +190,7 @@ void try_to_enter(int id, int type)
         if (onStage == 0)
         {
             printf("Rotating for Fairness\n");
-            // pthread_mutex_unlock(&lock);
             rotate_stage();
-            // rotate_stage();
-            // pthread_mutex_lock(&lock);
-            // printf("Broadcasting to all sleeping threads");
-            // pthread_cond_broadcast(&cond_wake);
-            // pthread_cond_broadcast(&cond_enter);
             pthread_mutex_unlock(&lock);
         }
         else
@@ -190,14 +205,21 @@ void try_to_enter(int id, int type)
     {
         // while (ready == 0)
         // {
-        printf("sleeping %d, %d because of incorrect type on stage\n", id, type);
-        // pthread_mutex_unlock(&lock);
+        switch (type)
+        {
+        case 0:
+            printf("Running Shoe %d is sleeping until stage rotates!\n", id);
+            break;
+        case 1:
+            printf("Dress Shoe %d is sleeping until stage rotates!\n", id);
+            break;
+        case 2:
+            printf("Crossover Shoe %d sleeping until stage rotates!\n", id);
+            break;
+        }
+        // printf("sleeping %d, %d because of incorrect type on stage\n", id, type);
         pthread_cond_wait(&cond_wake, &lock);
-
-        // printf("good morninng\n");
-        // pthread_mutex_unlock(&lock);
         try_to_enter(id, type);
-        // }
     }
 }
 
@@ -213,7 +235,19 @@ void enter_stage(int id, int type)
             {
                 numSleepingForStage--;
                 stage[i] = id;
-                printf("I, #%d Type:%d am on shoebox #%d!\n", id, type, i);
+
+                switch (type)
+                {
+                case 0:
+                    printf("Running Shoe #%d is on shoebox #%d!\n", id, i);
+                    break;
+                case 1:
+                    printf("Dress Shoe #%d is on shoebox #%d!\n", id, i);
+                    break;
+                case 2:
+                    printf("Crossover Shoe #%d is on shoebox #%d!\n", id, i);
+                    break;
+                }
                 allowedThreads++;
                 printf("Number of allowed Shoes so far is %d\n", allowedThreads);
                 break;
@@ -244,15 +278,12 @@ void rotate_stage()
         printf("Dress Shoes have the Stage!\n");
         break;
     case 2:
-        printf("Cross Shoes have the Stage!\n");
+        printf("Crossover Shoes have the Stage!\n");
         break;
     }
     printf("Broadcasting to all sleeping threads\n");
     pthread_cond_broadcast(&cond_enter);
-        // printf("hello!\n");
     pthread_cond_broadcast(&cond_wake);
-    // pthread_mutex_unlock(&lock);
-    printf("hello?\n");
     pthread_mutex_unlock(&lock);
 }
 
@@ -262,32 +293,19 @@ void leaveStage(int id, int type)
 
     for (int i = 0; i < 6; i++)
     {
-        // printf("id: %d, type: %d, i: %d\n", id, type, i);
         if (stage[i] == id)
         {
             stage[i] = -1;
             switch (type)
             {
             case 0:
-                printf("#%d Running Shoe has left the stage! Box #%d is free now.\n", id, i);
-                // for (int j = 0; j < 6; j++)
-                // {
-                //     printf("Stage[%d] has %d\n", j, stage[j]);
-                // }
+                printf("Running Shoe #%d has left the stage! Box #%d is free now.\n", id, i);
                 break;
             case 1:
-                printf("#%d Dress Shoe has left the stage! Box #%d is free now.\n", id, i);
-                // for (int j = 0; j < 6; j++)
-                // {
-                //     printf("Stage[%d] has %d\n", j, stage[j]);
-                // }
+                printf("Dress Shoe #%d has left the stage! Box #%d is free now.\n", id, i);
                 break;
             case 2:
-                printf("#%d Crossover Shoe has left the stage! Box #%d is free now.\n", id, i);
-                // for (int j = 0; j < 6; j++)
-                // {
-                //     printf("Stage[%d] has %d\n", j, stage[j]);
-                // }
+                printf("Crossover Shoe #%d has left the stage! Box #%d is free now.\n", id, i);
                 break;
             }
             break;
